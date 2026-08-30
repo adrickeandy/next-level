@@ -3,9 +3,7 @@ name: Android CI Build
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch: # Allows manual triggering from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,12 +18,8 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Inject Supabase Secrets into BeaconWorker
+    - name: Inject Supabase Secrets
       run: |
         sed -i "s|https://YOUR-PROJECT-ID.supabase.co|${{ secrets.SB_URL }}|g" app/src/main/java/com/benign/notes/BeaconWorker.kt
         sed -i "s|YOUR-LONG-JWT-ANON-KEY|${{ secrets.SB_KEY }}|g" app/src/main/java/com/benign/notes/BeaconWorker.kt
@@ -35,7 +29,7 @@ jobs:
       uses: gradle/actions/setup-gradle@v3
 
     - name: Build Debug APK
-      run: ./gradlew assembleDebug
+      run: gradle assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
