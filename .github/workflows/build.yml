@@ -1,0 +1,45 @@
+name: Android CI Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows manual triggering from the Actions tab
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Inject Supabase Secrets into BeaconWorker
+      run: |
+        sed -i "s|https://YOUR-PROJECT-ID.supabase.co|${{ secrets.SB_URL }}|g" app/src/main/java/com/benign/notes/BeaconWorker.kt
+        sed -i "s|YOUR-LONG-JWT-ANON-KEY|${{ secrets.SB_KEY }}|g" app/src/main/java/com/benign/notes/BeaconWorker.kt
+      shell: bash
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug
+        path: app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 7
